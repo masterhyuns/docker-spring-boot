@@ -1,0 +1,80 @@
+plugins {
+    id 'org.springframework.boot' version '2.7.0'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id 'com.google.cloud.tools.jib' version '3.1.4'
+}
+
+group = 'com.example.job'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-web-services'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+version = '0.0.1-SNAPSHOT'
+description = 'jib-docker'
+group = 'com.example.job'
+
+java.sourceCompatibility = JavaVersion.VERSION_11
+
+
+jar {
+    enabled = false
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+jib {
+    from {
+        // base image 와 동일하다
+        image = 'adoptopenjdk/openjdk11:alpine-jre'
+    }
+    to {
+        // 생성된 이미지가 저장될 repository
+        image = 'masterhyuns/test-spring-boot'
+        tags = ['1.0']
+    }
+    container {
+        // boot 실행시 설정값
+        entrypoint = ['java', '-Dspring.profiles.active=test', '-jar', 'test-docker-spring-boot-0.0.1-SNAPSHOT.jar']
+        // mainClass = 'com.test.StartApplication'
+        jvmFlags = ['-Xms512m', '-Xmx512m', '-Xdebug', '-XshowSettings:vm', '-XX:+UnlockExperimentalVMOptions', '-XX:+UseContainerSupport']
+        ports = ['8080']
+
+        environment = [SPRING_OUTPUT_ANSI_ENABLED: "ALWAYS"]
+        labels = [version:project.version, name:project.name, group:project.group]
+        // build 시간
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        format = 'Docker'
+    }
+    // 특정 path 에서 특정 파일을 가져올때 선언
+    extraDirectories {
+        paths {
+            path {
+                from = file('build/libs')
+            }
+        }
+    }
+}
